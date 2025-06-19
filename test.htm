@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Drag, Resize, Rotate Image on Canvas</title>
+  <style>
+    canvas {
+      border: 2px solid #000;
+    }
+    #controls {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <input type="file" id="imageUpload" accept="image/*">
+  <canvas id="drawingCanvas" width="800" height="500"></canvas>
+
+  <div id="controls">
+    <label>Rotate: <input type="range" id="rotateSlider" min="0" max="360" value="0"> <span id="angleLabel">0°</span></label>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d');
+    const imageUpload = document.getElementById('imageUpload');
+    const rotateSlider = document.getElementById('rotateSlider');
+    const angleLabel = document.getElementById('angleLabel');
+
+    let image = null;
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    let rect = {
+      x: 100,
+      y: 100,
+      width: 200,
+      height: 200,
+      angle: 0
+    };
+
+    // Check if mouse is inside image
+    function isInsideImage(x, y) {
+      const dx = x - rect.x;
+      const dy = y - rect.y;
+      return dx >= 0 && dx <= rect.width && dy >= 0 && dy <= rect.height;
+    }
+
+    function drawRotatedImage() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (!image) return;
+
+      ctx.save();
+      ctx.translate(rect.x + rect.width / 2, rect.y + rect.height / 2);
+      ctx.rotate(rect.angle * Math.PI / 180);
+      ctx.drawImage(image, -rect.width / 2, -rect.height / 2, rect.width, rect.height);
+      ctx.restore();
+    }
+
+    imageUpload.addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+          image = img;
+          rect.width = img.width / 2;
+          rect.height = img.height / 2;
+          drawRotatedImage();
+        };
+        img.src = evt.target.result;
+      };
+
+      if (file) reader.readAsDataURL(file);
+    });
+
+    canvas.addEventListener('mousedown', function(e) {
+      const rectCanvas = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rectCanvas.left;
+      const mouseY = e.clientY - rectCanvas.top;
+
+      if (isInsideImage(mouseX, mouseY)) {
+        isDragging = true;
+        dragOffsetX = mouseX - rect.x;
+        dragOffsetY = mouseY - rect.y;
+      }
+    });
+
+    canvas.addEventListener('mousemove', function(e) {
+      if (isDragging) {
+        const rectCanvas = canvas.getBoundingClientRect();
+        rect.x = e.clientX - rectCanvas.left - dragOffsetX;
+        rect.y = e.clientY - rectCanvas.top - dragOffsetY;
+        drawRotatedImage();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => isDragging = false);
+    canvas.addEventListener('mouseleave', () => isDragging = false);
+
+    rotateSlider.addEventListener('input', () => {
+      rect.angle = parseInt(rotateSlider.value);
+      angleLabel.textContent = rect.angle + '°';
+      drawRotatedImage();
+    });
+
+    // Optional: Resize with mouse drag near bottom-right corner
+    let resizing = false;
+    const resizeMargin = 10;
+
+    canvas.addEventListener('mousedown', function(e) {
+      const rectCanvas = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rectCanvas.left;
+      const mouseY = e.clientY - rectCanvas.top;
+
+      if (
+        mouseX >= rect.x + rect.width - resizeMargin &&
+        mouseY >= rect.y + rect.height - resizeMargin
+      ) {
+        resizing = true;
+      }
+    });
+
+    canvas.addEventListener('mousemove', function(e) {
+      const rectCanvas = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rectCanvas.left;
+      const mouseY = e.clientY - rectCanvas.top;
+
+      if (
+        mouseX >= rect.x + rect.width - resizeMargin &&
+        mouseY >= rect.y + rect.height - resizeMargin
+      ) {
+        canvas.style.cursor = 'nwse-resize';
+      } else {
+        canvas.style.cursor = 'default';
+      }
+
+      if (resizing) {
+        rect.width = mouseX - rect.x;
+        rect.height = mouseY - rect.y;
+        drawRotatedImage();
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => resizing = false);
+    canvas.addEventListener('mouseleave', () => resizing = false);
+  </script>
+</body>
+</html>
