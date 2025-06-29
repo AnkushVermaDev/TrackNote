@@ -1,0 +1,36 @@
+.insertTextContainer {
+    position: absolute;
+    width: 90vw;
+    height: 80vh;
+    color: white;
+    z-index: 5;
+    /* ✨ This is key */
+    pointer-events: none;
+}
+
+.insertTextContainer .takeuserinputText,
+.insertTextContainer .settingOption {
+    pointer-events: auto; /* allow user interaction only on these parts */
+}
+
+.takeuserinputText > *{
+
+    user-select: none;
+
+}
+
+.FormTextContainer{
+
+    position: absolute;
+    bottom: 30%;    
+    z-index: 2;
+    display: none;
+    
+
+}    
+
+.settingOption{
+    position: absolute;
+    bottom: 0;
+    right: 5%;
+}
